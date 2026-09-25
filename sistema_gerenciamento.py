@@ -2,7 +2,6 @@ from queue import PriorityQueue
 import requests
 
 # HUFFMAN CODE
-global encode_map
 encode_map = {}
 
 class HuffmanNode:
@@ -26,24 +25,28 @@ def count_freq(message):
 
 def create_huffman_tree(freq_map):
     p_queue = PriorityQueue()
+
     for key in freq_map.keys():
         node = HuffmanNode(freq_map[key], key, None, None)
         p_queue.put((node.freq, node))
 
     while p_queue.qsize() > 1:
-        ignore, first = p_queue.get()
-        ignore, second = p_queue.get()
+        _, first = p_queue.get()
+        _, second = p_queue.get()
 
         parent_node = HuffmanNode(first.freq + second.freq, "-", first, second)
         p_queue.put((parent_node.freq, parent_node))
 
-    ignore, root = p_queue.get()
+    _, root = p_queue.get()
     return root
 
 def set_bit_code(node, bit_str):
     if node is None:
         return
     if node.left is None and node.right is None:
+        if bit_str == "":
+            bit_str = "0"
+
         encode_map[node.data] = bit_str
         return
 
@@ -51,15 +54,17 @@ def set_bit_code(node, bit_str):
     set_bit_code(node.right, bit_str + "1")
 
 def encode(message):
+    global encode_map
+    encode_map = {}
+
+    if not message:
+        return ""
+
     freq_map = count_freq(message)
     root = create_huffman_tree(freq_map)
     set_bit_code(root, "")
 
-    encoded_message = ""
-    for char in message:
-        encoded_message += encode_map[char]
-    return encoded_message
-
+    return "".join(encode_map[char] for char in message)
 
 # TRIE CODE
 class TrieNode:
@@ -67,6 +72,7 @@ class TrieNode:
         # Cada índice representa um caractere ASCII, evitando o uso de dict
         self.children = [None] * 256
         self.is_end_of_word = False
+        self.original_word = None
 
 class Trie:
     def __init__(self):
@@ -76,6 +82,8 @@ class Trie:
         return ord(char)
 
     def insert(self, word):
+        original_word = word
+        word = word.lower()
         current_node = self.root
 
         for char in word:
@@ -87,8 +95,10 @@ class Trie:
             current_node = current_node.children[index]
 
         current_node.is_end_of_word = True
+        current_node.original_word = original_word
 
     def search_word(self, word):
+        word = word.lower()
         current_node = self.root
 
         for char in word:
@@ -102,6 +112,7 @@ class Trie:
         return current_node.is_end_of_word
 
     def search_prefix(self, prefix):
+        prefix = prefix.lower()
         current_node = self.root
 
         for char in prefix:
@@ -113,19 +124,17 @@ class Trie:
             current_node = current_node.children[index]
 
         results = []
-        self.dfs(current_node, prefix, results)
+        self.dfs(current_node, results)
 
         return results
 
-    def dfs(self, node, current_word, results):
+    def dfs(self, node, results):
         if node.is_end_of_word:
-            results.append(current_word)
+            results.append(node.original_word)
 
-        for index, child_node in enumerate(node.children):
+        for child_node in node.children:
             if child_node is not None:
-                char = chr(index)
-                self.dfs(child_node, current_word + char, results)
-
+                self.dfs(child_node, results)
 
 # FUNCTIONS
 def get_all_info(category):
@@ -137,6 +146,7 @@ def get_all_info(category):
         return data
     else:
         print(f"Falha ao coletar os dados. Erro: {response.status_code}")
+        return None
 
 def menu():
     print("1. Buscar pessoa por nome")
@@ -151,7 +161,7 @@ def menu():
                 return op
             else:
                 print("Opção inválida. Digite sua escolha no intervalo disponível.")
-        except:
+        except ValueError:
             print("Opção inválida. Digite sua escolha no intervalo disponível.")
 
 
@@ -163,6 +173,11 @@ people_trie = Trie()
 base_url = "https://swapi.info/api/"
 
 people_info = get_all_info("people")
+
+if not people_info:
+    print("Não foi possível carregar os dados dos personagens.")
+    exit()
+
 planets_info = get_all_info("planets")
 films_info = get_all_info("films")
 vehicles_info = get_all_info("vehicles")
@@ -196,8 +211,7 @@ while True:
         name = input("Digite o nome que deseja buscar: ")
         if people_trie.search_word(name):
             for person in people_info:
-                if person["name"] == name:
-
+                if person["name"].lower() == name.lower():
                     print(f"\nNome: {person['name']}")
                     print(f"Altura: {person['height']} cm")
                     print(f"Peso: {person['mass']} kg")
@@ -225,8 +239,10 @@ while True:
                             print(f"{starships[starship]}")
                     else:
                         print("Não possui")
+        else:
+            print(f"O nome {name} não está no sistema.")
 
-                    print()
+        print()
 
     elif op == 2:
         planet_searched = input("Digite o planeta: ")
@@ -254,7 +270,7 @@ while True:
             for name in names_found:
                 print(name)
         else:
-            print(f"\nNenhum personagem encontrado com o prefixo '{prefix}'.")
+            print(f"Nenhum personagem encontrado com o prefixo '{prefix}'.")
 
         print()
             
