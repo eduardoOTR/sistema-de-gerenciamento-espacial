@@ -3,6 +3,9 @@ import requests
 
 # HUFFMAN CODE
 encode_map = {}
+freq_map = {}
+huffman_post_list = []
+huffman_in_list = []
 
 class HuffmanNode:
     def __init__(self, freq, data, left, right):
@@ -15,15 +18,13 @@ class HuffmanNode:
         return self.freq < other.freq
 
 def count_freq(message):
-    freq_map = {}
     for char in message:
         if char in freq_map.keys():
             freq_map[char] += 1
         else:
             freq_map[char] = 1
-    return freq_map
 
-def create_huffman_tree(freq_map):
+def create_huffman_tree():
     p_queue = PriorityQueue()
 
     for key in freq_map.keys():
@@ -33,8 +34,9 @@ def create_huffman_tree(freq_map):
     while p_queue.qsize() > 1:
         _, first = p_queue.get()
         _, second = p_queue.get()
+        parent_freq = first.freq + second.freq
 
-        parent_node = HuffmanNode(first.freq + second.freq, "-", first, second)
+        parent_node = HuffmanNode(parent_freq, str(parent_freq), first, second)
         p_queue.put((parent_node.freq, parent_node))
 
     _, root = p_queue.get()
@@ -53,15 +55,30 @@ def set_bit_code(node, bit_str):
     set_bit_code(node.left, bit_str + "0")
     set_bit_code(node.right, bit_str + "1")
 
+def post_in_traversal(node):
+    if node is None:
+        return
+    post_in_traversal(node.left)
+    huffman_in_list.append(node.data)
+    post_in_traversal(node.right)
+    huffman_post_list.append(node.data)
+
 def encode(message):
     global encode_map
+    global freq_map
+    global huffman_post_list
+    global huffman_in_list
     encode_map = {}
+    freq_map = {}
+    huffman_post_list = []
+    huffman_in_list = []
 
     if not message:
         return ""
 
-    freq_map = count_freq(message)
-    root = create_huffman_tree(freq_map)
+    count_freq(message)
+    root = create_huffman_tree()
+    post_in_traversal(root)
     set_bit_code(root, "")
 
     return "".join(encode_map[char] for char in message)
@@ -152,12 +169,13 @@ def menu():
     print("1. Buscar pessoa por nome")
     print("2. Buscar pessoas por planeta natal")
     print("3. Buscar pessoas por prefixo do nome")
-    print("4. Sair")
+    print("4. Transmitir informações planetárias")
+    print("5. Sair")
     while True:
         try:
             op = int(input("Digite sua escolha: "))
 
-            if 0 < op < 5:
+            if 0 < op < 6:
                 return op
             else:
                 print("Opção inválida. Digite sua escolha no intervalo disponível.")
@@ -273,6 +291,27 @@ while True:
             print(f"Nenhum personagem encontrado com o prefixo '{prefix}'.")
 
         print()
-            
+
     elif op == 4:
+        planets_string = str(planets_info).lower()
+        encoded_message = encode(planets_string)
+
+        compression_rate = (1 - (len(encoded_message) / (len(planets_string) * 8))) * 100
+
+        print("Mensagem com as informações dos planetas enviada com sucesso!")
+        print("Mensagem enviada:")
+        print(encoded_message)
+        print("\nTabela de frequências:")
+        print(freq_map)
+        print("\nÁrvore de Huffman em pós ordem:")
+        print(huffman_post_list)
+        print("\nÁrvore de Huffman em ordem simétrica:")
+        print(huffman_in_list)
+        print("\nTabela de códigos binários:")
+        print(encode_map)
+        print(f"\nTaxa de compressão: {compression_rate:.2f}%")
+
+        print()
+            
+    elif op == 5:
         break
