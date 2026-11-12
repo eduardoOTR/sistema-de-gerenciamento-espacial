@@ -1,5 +1,6 @@
 import requests
 from estruturas.trie import Trie
+from estruturas.hashmap import Hashmap
 from estruturas.huffman import encode, get_huffman_data
 
 def get_all_info(category):
@@ -18,12 +19,13 @@ def menu():
     print("2. Buscar pessoas por planeta natal")
     print("3. Buscar pessoas por prefixo do nome")
     print("4. Transmitir informações planetárias")
-    print("5. Sair")
+    print("5. Buscar veículo por id")
+    print("6. Sair")
     while True:
         try:
             op = int(input("Digite sua escolha: "))
 
-            if 0 < op < 6:
+            if 0 < op < 7:
                 return op
             else:
                 print("Opção inválida. Digite sua escolha no intervalo disponível.")
@@ -49,23 +51,27 @@ films_info = get_all_info("films")
 vehicles_info = get_all_info("vehicles")
 starships_info = get_all_info("starships")
 
-planets = {}
-films = {}
-vehicles = {}
-starships = {}
+planets = Hashmap()
+films = Hashmap()
+vehicles = Hashmap()
+starships = Hashmap()
+vehicle_ids = Hashmap()
+curr_id = 1
 
 if planets_info:
     for planet in planets_info:
-        planets[planet["url"]] = planet["name"]
+        planets.insert(planet["url"], planet["name"])
 if films_info:
     for film in films_info:
-        films[film["url"]] = film["title"]
+        films.insert(film["url"], film["title"])
 if vehicles_info:
     for vehicle in vehicles_info:
-        vehicles[vehicle["url"]] = vehicle["name"]
+        vehicles.insert(vehicle["url"], vehicle["name"])
+        vehicle_ids.insert(curr_id, vehicle["name"])
+        curr_id += 1
 if starships_info:
     for starship in starships_info:
-        starships[starship["url"]] = starship["name"]
+        starships.insert(starship["url"], starship["name"])
 if people_info:
     for person in people_info:
         people_trie.insert(person["name"])
@@ -86,23 +92,23 @@ while True:
                     print(f"Olhos: {person['eye_color']}")
                     print(f"Ano de nascimento: {person['birth_year']}")
                     print(f"Gênero: {person['gender']}")
-                    print(f"Planeta natal: {planets[person['homeworld']]}")
+                    print(f"Planeta natal: {planets.get_val(person['homeworld'])}")
 
                     print("\nFilmes:")
                     for film in person["films"]:
-                        print(f"{films[film]}")
+                        print(f"{films.get_val(film)}")
 
                     print("\nVeículos:")
                     if person["vehicles"]:
                         for vehicle in person["vehicles"]:
-                            print(f"{vehicles[vehicle]}")
+                            print(f"{vehicles.get_val(vehicle)}")
                     else:
                         print("Não possui")
 
                     print("\nNaves:")
                     if person["starships"]:
                         for starship in person["starships"]:
-                            print(f"{starships[starship]}")
+                            print(f"{starships.get_val(starship)}")
                     else:
                         print("Não possui")
         else:
@@ -117,7 +123,7 @@ while True:
         print()
 
         for person in people_info:
-            planet_name = planets.get(person["homeworld"])
+            planet_name = planets.get_val(person["homeworld"])
             if planet_name and planet_name.lower() == planet_searched.lower():
                 print(person["name"])
                 found = True
@@ -162,6 +168,18 @@ while True:
         print(f"\nTaxa de compressão: {compression_rate:.2f}%")
 
         print()
-            
+
     elif op == 5:
+        target_id = input("Digite o id: ")
+        try:
+            target_vehicle = vehicle_ids.get_val(int(target_id))
+            if target_vehicle is None:
+                print(f"Nenhum veículo encontrado com o id '{target_id}'.")
+            else:
+                print(target_vehicle)
+                print(f"Colisões de vehicle_ids: {vehicle_ids.collisions}")
+        except ValueError:
+            print("Id inválido.")
+
+    elif op == 6:
         break
