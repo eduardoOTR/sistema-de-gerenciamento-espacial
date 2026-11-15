@@ -3,6 +3,27 @@ from estruturas.trie import Trie
 from estruturas.hashmap import Hashmap
 from estruturas.huffman import encode, get_huffman_data
 
+def solve_packaging(weights, values, raw_capacity):
+    try:
+        capacity = int(raw_capacity)
+    except (ValueError, TypeError):
+        capacity = 0
+    n = len(values)
+    max_weight = sum(weights)
+
+    if capacity >= max_weight:
+        return sum(values)
+
+    dp = [[0 for _ in range(0, capacity + 1)] for _ in range(0, n + 1)]
+
+    for i in range(1, n + 1):
+        for j in range(1, capacity + 1):
+            if j >= weights[i - 1]:
+                dp[i][j] = max(dp[i - 1][j], values[i - 1] + dp[i - 1][j - weights[i - 1]])
+            else:
+                dp[i][j] = dp[i - 1][j]
+    return dp[n][capacity]
+
 def get_all_info(category):
     url = f"{base_url}{category}/"
     response = requests.get(url)
@@ -20,12 +41,13 @@ def menu():
     print("3. Buscar pessoas por prefixo do nome")
     print("4. Transmitir informações planetárias")
     print("5. Buscar veículo por id")
-    print("6. Sair")
+    print("6. Relatório de carregamento de veículos")
+    print("7. Sair")
     while True:
         try:
             op = int(input("Digite sua escolha: "))
 
-            if 0 < op < 7:
+            if 0 < op < 8:
                 return op
             else:
                 print("Opção inválida. Digite sua escolha no intervalo disponível.")
@@ -181,5 +203,32 @@ while True:
         except ValueError:
             print("Id inválido.")
 
+        print()
+
     elif op == 6:
+        while True:
+            try:
+                weights = list(map(int, input("Digite os pesos das 3 caixas que serão carregadas (Sugestão: 10 20 30): ").split()))
+                values = list(map(int, input("Digite os valores das 3 caixas (Sugestão: 60 100 120): ").split()))
+
+                if len(weights) != 3 or len(values) != 3:
+                    print("Erro. Digite exatamente 3 pesos e 3 valores separados por espaço.")
+                    continue
+                if any(w <= 0 for w in weights) or any(v <= 0 for v in values):
+                    print("Erro. Digite somente números maiores que 0.")
+                    continue
+
+                break
+            except ValueError:
+                print("Erro. Digite somente numeros positivos separados por espaço.")
+
+        for vehicle in vehicles_info:
+            name = vehicle["name"]
+            raw_capacity = vehicle["cargo_capacity"]
+            max_packed_value = solve_packaging(weights, values, raw_capacity)
+            print(f"Veículo: {name}, Capacidade: {raw_capacity}, Lucro total carregado: {max_packed_value} créditos")
+
+        print()
+
+    elif op == 7:
         break
