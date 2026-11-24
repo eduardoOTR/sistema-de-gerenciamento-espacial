@@ -2,7 +2,63 @@ import requests
 from estruturas.trie import Trie
 from estruturas.hashmap import Hashmap
 from estruturas.huffman import encode, get_huffman_data
+from estruturas.b_tree import BTree
+from estruturas.graph import Graph
 
+# GRAFO
+graph = {
+    "Tatooine": {
+        "Naboo": 6
+    },
+
+    "Dagobah": {
+        "Hoth": 4,
+        "Endor": 6,
+        "Mustafar": 1,
+        "Naboo": 5
+    },
+
+    "Coruscant": {
+        "Alderaan": 2,
+        "Naboo": 12
+    },
+
+    "Alderaan": {
+        "Coruscant": 2,
+        "Naboo": 14
+    },
+
+    "Endor": {
+        "Dagobah": 6,
+        "Hoth": 5,
+        "Naboo": 16,
+        "Mustafar": 7
+    },
+
+    "Hoth": {
+        "Dagobah": 4,
+        "Endor": 5,
+        "Mustafar": 2
+    },
+
+    "Naboo": {
+        "Alderaan": 14,
+        "Coruscant": 12,
+        "Mustafar": 7,
+        "Tatooine": 6,
+        "Endor": 16,
+        "Dagobah": 5
+    },
+
+    "Mustafar": {
+        "Naboo": 7,
+        "Dagobah": 1,
+        "Hoth": 2,
+        "Endor": 7
+    }
+}
+
+# FUNÇÕES
 def solve_packaging(weights, values, raw_capacity):
     try:
         capacity = int(raw_capacity)
@@ -24,6 +80,20 @@ def solve_packaging(weights, values, raw_capacity):
                 dp[i][j] = dp[i - 1][j]
     return dp[n][capacity]
 
+def convert_mass(mass_value):
+    if mass_value is None:
+        return None
+
+    try:
+        mass = float(str(mass_value).replace(",", "").strip())
+    except (ValueError, TypeError):
+        return None
+    
+    if mass <= 0:
+        return None
+    
+    return mass
+
 def get_all_info(category):
     url = f"{base_url}{category}/"
     response = requests.get(url)
@@ -39,15 +109,18 @@ def menu():
     print("1. Buscar pessoa por nome")
     print("2. Buscar pessoas por planeta natal")
     print("3. Buscar pessoas por prefixo do nome")
-    print("4. Transmitir informações planetárias")
-    print("5. Buscar veículo por id")
-    print("6. Relatório de carregamento de veículos")
-    print("7. Sair")
+    print("4. Buscar veículo por id")
+    print("5. Buscar pessoas por intervalo de massa corporal")
+    print("6. Transmitir informações planetárias")
+    print("7. Relatório de carregamento de veículos")
+    print("8. Encontrar o menor caminho entre planetas")
+    print("9. Sair\n")
+
     while True:
         try:
             op = int(input("Digite sua escolha: "))
 
-            if 0 < op < 8:
+            if 0 < op < 10:
                 return op
             else:
                 print("Opção inválida. Digite sua escolha no intervalo disponível.")
@@ -59,6 +132,8 @@ def menu():
 print("------ SISTEMA DE GERENCIAMENTO ESPACIAL STAR WARS ------")
 
 people_trie = Trie()
+people_mass_tree = BTree(minimum_degree=3)
+planet_graph = Graph(graph)
 
 base_url = "https://swapi.info/api/"
 
@@ -97,6 +172,9 @@ if starships_info:
 if people_info:
     for person in people_info:
         people_trie.insert(person["name"])
+        mass = convert_mass(person.get("mass"))
+        if mass is not None:
+            people_mass_tree.insert(mass, person)
 
 while True:
     op = menu()
@@ -169,6 +247,49 @@ while True:
         print()
 
     elif op == 4:
+        target_id = input("Digite o id: ")
+        try:
+            target_vehicle = vehicle_ids.get_val(int(target_id))
+            if target_vehicle is None:
+                print(f"Nenhum veículo encontrado com o id '{target_id}'.")
+            else:
+                print(target_vehicle)
+                print(f"Colisões de vehicle_ids: {vehicle_ids.collisions}")
+        except ValueError:
+            print("Id inválido.")
+
+        print()
+
+    elif op == 5:
+        try:
+            minimum_weight = float(input("Insira o peso mínimo (kg): ").replace(",", "."))
+            maximum_weight = float(input("Insira o peso máximo (kg): ").replace(",", "."))
+
+            if minimum_weight <= 0 or maximum_weight <= 0:
+                print("Erro. Pesos devem ser maiores que 0.")
+            elif minimum_weight > maximum_weight:
+                print("Erro. Peso mínimo não pode ser maior que o peso máximo.")
+
+            else:
+                people_found = people_mass_tree.search_range(minimum_weight, maximum_weight)
+
+                print(f"\nPessoas pesando entre {minimum_weight:g}kg e {maximum_weight:g}kg:")
+
+                if people_found:
+                    for weight, person in people_found:
+                        print(f"Nome: {person['name']}")
+                        print(f"Peso: {weight:g} kg\n")
+
+                    print(f"Número total de pessoas encontradas: {len(people_found)}")
+
+                else:
+                    print("Nenhuma pessoa encontrada nessa faixa de peso.")
+        except ValueError:
+            print("Erro. Insira valores válidos para massa corporal.")
+
+        print()
+
+    elif op == 6:
         planets_string = str(planets_info).lower()
         encoded_message = encode(planets_string)
 
@@ -191,21 +312,7 @@ while True:
 
         print()
 
-    elif op == 5:
-        target_id = input("Digite o id: ")
-        try:
-            target_vehicle = vehicle_ids.get_val(int(target_id))
-            if target_vehicle is None:
-                print(f"Nenhum veículo encontrado com o id '{target_id}'.")
-            else:
-                print(target_vehicle)
-                print(f"Colisões de vehicle_ids: {vehicle_ids.collisions}")
-        except ValueError:
-            print("Id inválido.")
-
-        print()
-
-    elif op == 6:
+    elif op == 7:
         while True:
             try:
                 weights = list(map(int, input("Digite os pesos das 3 caixas que serão carregadas (Sugestão: 10 20 30): ").split()))
@@ -220,7 +327,7 @@ while True:
 
                 break
             except ValueError:
-                print("Erro. Digite somente numeros positivos separados por espaço.")
+                print("Erro. Digite somente números positivos separados por espaço.")
 
         for vehicle in vehicles_info:
             name = vehicle["name"]
@@ -230,5 +337,25 @@ while True:
 
         print()
 
-    elif op == 7:
+    elif op == 8:
+        start_planet = input("Insira o planeta de partida: ")
+        destination_planet = input("Insira o planeta de destino: ")
+
+        try:
+            result = planet_graph.shortest_path(start_planet, destination_planet)
+
+            if result is None:
+                print("Nenhum caminho encontrado entre os planetas inseridos.")
+            else:
+                path, distance = result
+
+                print("\nMenor caminho:")
+                print(" -> ".join(path))
+                print(f"Distância total: {distance}")
+        except ValueError as error:
+            print(f"Erro: {error}")
+
+        print()
+
+    elif op == 9:
         break
