@@ -12,7 +12,11 @@ def solve_packaging(weights, values, raw_capacity):
     max_weight = sum(weights)
 
     if capacity >= max_weight:
-        return sum(values)
+        used = [1,2,3]
+        return sum(values), used
+
+    if capacity < min(weights):
+        return 0, "Nenhuma"
 
     dp = [[0 for _ in range(0, capacity + 1)] for _ in range(0, n + 1)]
 
@@ -22,7 +26,20 @@ def solve_packaging(weights, values, raw_capacity):
                 dp[i][j] = max(dp[i - 1][j], values[i - 1] + dp[i - 1][j - weights[i - 1]])
             else:
                 dp[i][j] = dp[i - 1][j]
-    return dp[n][capacity]
+
+    used = []
+    i = n
+    w = capacity
+    while i > 0 and w > 0:
+        if dp[i][w] != dp[i - 1][w]:
+            used.append(i)
+            w -= weights[i - 1]
+            i -= 1
+        else:
+            i -= 1
+    used.reverse()
+
+    return dp[n][capacity], used
 
 def get_all_info(category):
     url = f"{base_url}{category}/"
@@ -225,8 +242,8 @@ while True:
         for vehicle in vehicles_info:
             name = vehicle["name"]
             raw_capacity = vehicle["cargo_capacity"]
-            max_packed_value = solve_packaging(weights, values, raw_capacity)
-            print(f"Veículo: {name}, Capacidade: {raw_capacity}, Lucro total carregado: {max_packed_value} créditos")
+            max_packed_value, used_boxes = solve_packaging(weights, values, raw_capacity)
+            print(f"Veículo: {name}, Capacidade: {raw_capacity}, Lucro total carregado: {max_packed_value} créditos, Caixas carregadas: {used_boxes}")
 
         print()
 
