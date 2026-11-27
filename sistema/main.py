@@ -463,7 +463,8 @@ while True:
                         print(f"Peso: {weight:g} kg\n")
 
                     print(f"Número total de pessoas encontradas: {len(people_found)}")
-
+                    print("Total de operações de split:", people_mass_tree.splits)
+                    print("Altura final da árvore:", people_mass_tree.height())
                 else:
                     print("Nenhuma pessoa encontrada nessa faixa de peso.")
         except ValueError:

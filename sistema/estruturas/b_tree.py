@@ -14,6 +14,7 @@ class BTree:
 
         self.minimum_degree = minimum_degree
         self.root = BTreeNode()
+        self.splits = 0
 
     def insert(self, weight, person):
         root = self.root
@@ -74,6 +75,8 @@ class BTree:
 
         parent.children.insert(child_index + 1, right_child)
 
+        self.splits += 1
+
     def search_range(self, min_weight, maximum_weight):
         if min_weight > maximum_weight:
             raise ValueError("Erro. min_weight não pode ser maior que max_weight.")
@@ -98,3 +101,13 @@ class BTree:
                 self.recursive_search_range(node.children[index + 1], min_weight, max_weight, results)
 
             index += 1
+
+    def height(self):
+        height = 0
+        current = self.root
+
+        while not current.leaf:
+            height += 1
+            current = current.children[0]
+            
+        return height
