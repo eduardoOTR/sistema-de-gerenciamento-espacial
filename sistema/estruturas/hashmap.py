@@ -1,6 +1,6 @@
 class Hashmap:
     def __init__(self):
-        self.map = [[] for i in range(10)]
+        self.map = [[] for i in range(20)]
         self.collisions = 0
 
     def str_to_int(self, text):
@@ -14,7 +14,7 @@ class Hashmap:
             int_key = self.str_to_int(key)
         else:
             int_key = key
-        index = int_key % 10
+        index = int_key % 20
         for i, (k, _) in enumerate(self.map[index]):
             if k == key:
                 self.map[index][i] = (key, val)
@@ -28,8 +28,12 @@ class Hashmap:
             int_key = self.str_to_int(key)
         else:
             int_key = key
-        index = int_key % 10
+        index = int_key % 20
         for k, v in self.map[index]:
             if key == k:
                 return v
         return None
+
+    def print_load_factor(self):
+        load_factor = self.collisions / 20
+        print(f"Fator de carga do Hashmap: {load_factor:.2f}")

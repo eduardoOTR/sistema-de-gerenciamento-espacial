@@ -12,8 +12,10 @@ class Trie:
     def get_index(self, char):
         return ord(char)
 
-    def insert(self, word):
-        original_word = word
+    def insert(self, word, original_word=None):
+        if original_word == None:
+            original_word = word
+            
         word = word.lower()
         current_node = self.root
 
